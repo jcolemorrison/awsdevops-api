@@ -1,0 +1,15 @@
+{
+  "db": {
+    "name": "db",
+    "connector": "memory"
+  },
+  "mysqlDb": {
+    "host": "mysqlDb",
+    "port": 3306,
+    "database": "devdb",
+    "password": "devpwd",
+    "name": "mysqlDb",
+    "user": "devuser",
+    "connector": "mysql"
+  }
+}
