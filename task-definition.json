@@ -1,0 +1,20 @@
+{
+  "family": "awsdevops-api-task-def",
+  "containerDefinitions": [
+    {
+      "name": "awsdevops-api-task",
+      "portMappings":[
+        {
+          "containerPort": 3000
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {}
+      },
+      "essential": true,
+      "cpu": 500,
+      "memoryReservation": 496
+    }
+  ]
+}
