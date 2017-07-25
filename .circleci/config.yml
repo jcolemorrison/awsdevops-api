@@ -1,0 +1,116 @@
+# specifies that we want to use circleci 2.0
+version: 2
+
+# Reusable block for the different jobs
+defaults: &defaults
+  docker:
+      # This using a docker image that includes everything we need
+      # to work with Docker, Node, Yarn and AWS.  See the repository
+      # here: https://github.com/jcolemorrison/dnd-node-awscli
+    - image: jcolemorrison/dnd-node-awscli
+  working_directory: ~/project/app
+
+# where set set up our jobs.  The top level key is the name of the job.
+# Since we're using CircleCI 2.0 Workflows, order doesn't matter
+jobs:
+  # Job where we'll install everything
+  install:
+    # uses that block up top called defaults
+    <<: *defaults
+
+    # where we define steps for circleci to take IN ORDER
+    steps:
+      # checks out the code from the branch we've handed it
+      - checkout
+      # try and restore a cache if it exists so that we don't redundantly
+      # install a bunch of things each time and extend build time.
+      - restore_cache:
+          # name of the cache, basically where our cache lives
+          # ours is going to be based off the string `npm-cache-`
+          # plus the name of our branch
+          # plus a base64 encoded SHA256 hash of our yarn.lock file
+          keys:
+            - npm-cache-{{ .Branch }}-{{ checksum "yarn.lock" }}
+
+      # next we run a command named "install".  `name` can be whatever you want
+      # the command we run is `yarn install`
+      - run:
+          name: install
+          command: yarn install
+
+      # after installing everything, let's cache our node_modules
+      # so that on subsequent runs on this branch, we don't do a
+      # full reinstall.  We'll save it to that key we discussed earlier
+      - save_cache:
+          paths:
+            - node_modules
+          key: npm-cache-{{ .Branch }}-{{ checksum "yarn.lock" }}
+
+      # finally, let's save everything we just did so that it can
+      # carry over to the next job.  Each job runs as if it has nothing.
+      # this will make what happens in this job stick around for the next one.
+      # We'll tell it to keep everything we made in our app folder, which is
+      # our working directory.  This means our app and everything we just installed.
+      - persist_to_workspace:
+          root: ~/project
+          paths:
+            - app
+
+  # runs our tests
+  test:
+    <<: *defaults
+    steps:
+      # the only new command, it brings in the workspace that's persisted at
+      # ~/project.  Since this will be run after the install command, it will
+      # bring in that app directory, which will have our application in it.
+      - attach_workspace:
+          at: ~/project
+      - run:
+          name: test
+          command: yarn test
+
+  # calls our deploy script
+  deploy:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: ~/project
+
+      # "required" by CircleCI if you need to hook in and use the docker client
+      # aka build and push images
+      - setup_remote_docker
+      - run:
+          name: build image and deploy
+          # we run a script file here that we'll make in the final video
+          # of this section
+          command: |
+            chmod +x deploy.sh
+            ./deploy.sh
+
+# "jobs" defines units of work.  "workflows" defines how to use those unites of work
+workflows:
+  # match the version
+  version: 2
+  # name this whatever you want, it's just a top level key to name the workflow
+  build-test-deploy:
+    # here is where we define what jobs we will do.  Listing these out
+    # with nothing else will actually make them go parallel.  If you want
+    # them to be sequential, you have to do it like below.  Where the next step
+    # REQUIRES the completion of the previous step.
+    #
+    # For example, our `test` step requires `install`.  That means install
+    # must successfully pass first.
+    jobs:
+      - install
+      - test:
+          requires:
+            - install
+      - deploy:
+          requires:
+            - test
+          # This is how you tell a step to only activate based on branch
+          # we're saying, only do this job IF it's the master branch
+          filters:
+            branches:
+              only:
+                - master
