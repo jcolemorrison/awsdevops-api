@@ -31,6 +31,8 @@ jobs:
           # plus a base64 encoded SHA256 hash of our yarn.lock file
           keys:
             - npm-cache-{{ .Branch }}-{{ checksum "yarn.lock" }}
+            - npm-cache-{{ .Branch }}
+            - npm-cache
 
       # next we run a command named "install".  `name` can be whatever you want
       # the command we run is `yarn install`
@@ -45,6 +47,24 @@ jobs:
           paths:
             - node_modules
           key: npm-cache-{{ .Branch }}-{{ checksum "yarn.lock" }}
+      # save more general cache based on branch - these make it so that
+      # installing or removing just one dependencies doesn't lead to a full
+      # reinstall.  So if we added one package, it would invalidate the first cache
+      # because the `yarn.lock` file would be different.  This would be a full reinstall.
+      #
+      # However, the way CircleCI 2 works is that if it can't find the first cache in the list
+      # it will move to the next one and the next one and so on until it finds one or doesn't.
+      #
+      # So if we have a more general one, it will restore that cache -> yarn install -> save
+      # the new cache with the newly added dependencies WITHOUT doing a full install.
+      - save_cache:
+          paths:
+            - node_modules
+          key: npm-cache-{{ .Branch }}
+      - save_cache:
+          paths:
+            - node_modules
+          key: npm-cache
 
       # finally, let's save everything we just did so that it can
       # carry over to the next job.  Each job runs as if it has nothing.
