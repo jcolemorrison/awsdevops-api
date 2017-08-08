@@ -60,10 +60,10 @@ workflows:
   install-test-deploy:
     jobs:
       - install
-      - test
+      - test:
           requires:
             - install
-      - deploy
+      - deploy:
           requires:
             - test
           filters:
