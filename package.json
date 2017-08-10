@@ -12,7 +12,7 @@
     "test:unit": "NODE_ENV=test nyc --check-coverage -r text-summary mocha --recursive",
     "test:unit:watch": "NODE_ENV=test mocha -w",
     "test:unit:cover": "nyc -r html report",
-    "posttest": "npm run lint && nsp check"
+    "posttest": "yarn lint && nsp check"
   },
   "dependencies": {
     "compression": "^1.0.3",

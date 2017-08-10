@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env sh
 
 set -e
 CLUSTER="vpcity-api-cluster"
@@ -16,7 +16,7 @@ function push_to_registry () {
   docker build --rm=false -t $IMAGE .
 
   # login to ECR as CircleCI
-  eval $(aws ecr get-login --region $AWS_DEFAULT_REGION)
+  eval $(aws ecr get-login --no-include-email --region $AWS_DEFAULT_REGION)
 
   # Push image to ECR
   docker push $IMAGE
