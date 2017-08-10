@@ -1,10 +1,13 @@
 version: 2
 
+defaults: &defaults
+  docker:
+    - image: jcolemorrison/dnd-node-awscli
+  working_directory: ~/project/app
+
 jobs:
   install:
-    docker:
-      - image: jcolemorrison/dnd-node-awscli
-    working_directory: ~/project/app
+    <<: *defaults
     steps:
       - checkout
       - restore_cache:
@@ -31,5 +34,26 @@ jobs:
           root: ~/project
           paths:
             - app
+
+  test:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: ~/project
+      - run:
+          name: test
+          command: yarn test
+
+  deploy:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: ~/project
+      - setup_remote_docker
+      - run:
+          name: build image and deploy
+          command: |
+            chmod +x deploy.sh
+            ./deploy.sh
 
 workflows:
