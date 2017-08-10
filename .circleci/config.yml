@@ -57,3 +57,17 @@ jobs:
             ./deploy.sh
 
 workflows:
+  version: 2
+  install-test-deploy:
+    jobs:
+      - install
+      - test:
+          requires:
+            - install
+      - deploy:
+          requires:
+            - test
+          filters:
+            branches:
+              only:
+                - master
