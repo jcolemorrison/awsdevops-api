@@ -1,0 +1,35 @@
+version: 2
+
+jobs:
+  install:
+    docker:
+      - image: jcolemorrison/dnd-node-awscli
+    working_directory: ~/project/app
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - npm-cache-{{ .Branch }}-{{ checksum "yarn.lock" }}
+            - npm-cache-{{ .Branch }}
+            - npm-cache
+      - run:
+          name: install
+          command: yarn install
+      - save_cache:
+          paths:
+            - node_modules
+          key: npm-cache-{{ .Branch }}-{{ checksum "yarn.lock" }}
+      - save_cache:
+          paths:
+            - node_modules
+          key: npm-cache-{{ .Branch }}
+      - save_cache:
+          paths:
+            - node_modules
+          key: npm-cache
+      - persist_to_workspace:
+          root: ~/project
+          paths:
+            - app
+
+workflows:
